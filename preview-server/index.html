@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE LAST SIBERIA UI Preview</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .preview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+        .preview-header {
+            background: linear-gradient(135deg, #6b46c1, #805ad5);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .preview-content {
+            padding: 30px;
+            min-height: 400px;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #6b46c1;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #d32f2f;
+            padding: 30px;
+            background: #ffebee;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .success {
+            color: #2e7d32;
+            padding: 20px;
+            background: #e8f5e8;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .component {
+            margin: 15px 0;
+            padding: 20px;
+            border: 2px dashed #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .component:hover {
+            border-color: #6b46c1;
+            background: #faf5ff;
+        }
+        .component-header {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .component-button {
+            background: linear-gradient(135deg, #6b46c1, #805ad5);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .component-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(107, 70, 193, 0.4);
+        }
+        .component-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        .component-input:focus {
+            outline: none;
+            border-color: #6b46c1;
+        }
+        .debug-info {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .screens-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .screen-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+        .screen-item:hover {
+            border-color: #6b46c1;
+            background: #faf5ff;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="preview-container">
+            <div class="preview-header">
+                <h1>👁️ THE LAST SIBERIA UI Preview</h1>
+                <p>Режим предварительного просмотра</p>
+            </div>
+            
+            <div class="preview-content">
+                <div v-if="loading" class="loading">
+                    <div class="loading-spinner"></div>
+                    <h3>Загрузка preview...</h3>
+                    <p>Подождите, идет загрузка конфигурации экрана</p>
+                    <div class="debug-info" v-if="debugInfo">
+                        {{ debugInfo }}
+                    </div>
+                </div>
+                
+                <div v-else-if="error" class="error">
+                    <h3>Ошибка загрузки</h3>
+                    <p>{{ error }}</p>
+                    
+                    <div class="screens-list" v-if="availableScreens.length > 0">
+                        <h4>Доступные экраны:</h4>
+                        <div 
+                            v-for="screen in availableScreens" 
+                            :key="screen.slug"
+                            class="screen-item"
+                            @click="loadScreen(screen.slug)"
+                        >
+                            <strong>{{ screen.name }}</strong> ({{ screen.slug }})
+                        </div>
+                    </div>
+                    
+                    <div class="debug-info">
+                        URL: {{ currentUrl }}<br>
+                        Screen Slug: {{ screenSlug }}<br>
+                        Backend: {{ backendStatus }}
+                    </div>
+                    <button @click="retryLoading" class="component-button" style="margin-top: 15px;">
+                        Повторить попытку
+                    </button>
+                </div>
+                
+                <div v-else-if="screenConfig" class="success">
+                    <h3>Preview загружен успешно!</h3>
+                    <p><strong>Экран:</strong> {{ screenConfig.name }} ({{ screenConfig.slug }})</p>
+                    <p><strong>Версия:</strong> {{ screenConfig.version }}</p>
+                    <div class="debug-info">
+                        ID: {{ screenConfig.id }} | Active: {{ screenConfig.isActive }}
+                    </div>
+                </div>
+
+                <div id="screen-content" v-if="screenConfig && !loading">
+                    <!-- Динамический контент экрана -->
+                </div>
+
+                <div v-else-if="!loading && !error && !screenConfig" class="loading">
+                    <h3>👋 Добро пожаловать в THE LAST SIBERIA UI Preview</h3>
+                    <p>Для просмотра экрана добавьте параметр screen в URL:</p>
+                    <div class="debug-info">
+                        Пример: http://localhost:3001/?screen=demo-home
+                    </div>
+                    
+                    <div class="screens-list" v-if="availableScreens.length > 0">
+                        <h4>Или выберите один из доступных экранов:</h4>
+                        <div 
+                            v-for="screen in availableScreens" 
+                            :key="screen.slug"
+                            class="screen-item"
+                            @click="loadScreen(screen.slug)"
+                        >
+                            <strong>{{ screen.name }}</strong> ({{ screen.slug }})
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
